@@ -2,8 +2,7 @@
 
 ## Testbed
 
-**Not available yet.** The testbed (nodes, GPUs, NICs, RoCE/IB, SSD) has not been
-provided. The development VM used so far (2 vCPU AMD EPYC 7J13, 3 GB RAM, no GPU,
+**None.** No GPU testbed is available (2026-10-22). The development VM used so far (2 vCPU AMD EPYC 7J13, 3 GB RAM, no GPU,
 no RDMA) runs only the client-side harness and its tests; no measurement comes from it.
 
 ## Serving stack (proposed, not installed)
@@ -12,7 +11,7 @@ no RDMA) runs only the client-side harness and its tests; no measurement comes f
 | --- | --- | --- |
 | vLLM | v0.31.0 (2026-10-05) | Connector usage read from `docs/features/mooncake_store_connector_usage.md` at this tag |
 | Mooncake (`mooncake-transfer-engine`) | v0.3.13.post1 (2026-08-31) | To verify at install: `standalone-store` mode and `enable_offload` as vLLM v0.31.0 expects |
-| Model | `meta-llama/Llama-3.1-8B-Instruct`, TP=1 | Gated on Hugging Face; needs access |
+| Model | `Qwen/Qwen2.5-7B-Instruct` @ `a09a35458c702b33eeacc393d103063234e8bc28`, TP=1 | Apache-2.0, not gated. Config saved in `configs/models/` (SHA-256 `7463bb0e…`). Native context 32,768 tokens; longer trace requests need YaRN or a length cap |
 
 ## Data
 
