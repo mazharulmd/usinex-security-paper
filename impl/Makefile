@@ -1,7 +1,7 @@
 # Every figure and number regenerates from the raw records in a results/ run directory.
 PY := .venv/bin/python
 
-.PHONY: venv traces test analyze
+.PHONY: venv traces test analyze slack slack-report
 
 venv:
 	python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt
@@ -16,3 +16,12 @@ test:
 analyze:
 	@test -n "$(RUN)" || (echo "usage: make analyze RUN=results/<date>_<experiment>" && exit 1)
 	$(PY) -m harness.analyze $(RUN)
+
+# Week-3 slack simulation: full sweep into results/<date>_slack-sim/
+slack:
+	$(PY) -m sim.run_slack run
+
+# Rebuild summary.csv from a run's per-request raw files
+slack-report:
+	@test -n "$(RUN)" || (echo "usage: make slack-report RUN=results/<date>_slack-sim" && exit 1)
+	$(PY) -m sim.run_slack report $(RUN)

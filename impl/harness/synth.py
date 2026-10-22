@@ -46,8 +46,8 @@ from pathlib import Path
 SYNTH_VERSION = 1
 BLOCK_TOKENS = 512
 
-# Llama-3 reserves IDs >= 128000 for special tokens; the low IDs are byte-level
-# pieces. This range avoids both. It is a parameter and recorded in run metadata.
+# Qwen2.5 special tokens start at 151643 (Llama-3's at 128000); low IDs are
+# byte-level pieces in both. This range avoids both. It is a parameter and recorded in run metadata.
 DEFAULT_VOCAB = (1000, 100000)
 
 

@@ -16,6 +16,7 @@ make analyze RUN=results/<date>_<experiment>  # CSVs, gate.json, tier_ladder.png
 | `harness/loadgen.py` | Open-loop trace replay at a speedup factor |
 | `harness/analyze.py` | Per-tier TTFT stats, cross-validated miss-vs-hit and which-tier AUC, week-1 gate |
 | `harness/runmeta.py` | `results/<date>_<experiment>/meta.json`: command, git commit, versions, clock source |
+| `sim/slack.py`, `sim/run_slack.py` | Week-3 trace-driven slack simulation (`make slack`, `make slack-report RUN=...`) |
 | `harness/mockserver.py` | GPU-free stand-in for tests only; nothing measured against it is a result |
 
 Not written yet (need the testbed to design against real behaviour): `tiers.py`
