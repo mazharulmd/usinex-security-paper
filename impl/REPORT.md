@@ -77,7 +77,7 @@ what global sharing saves. Global sharing saves 35.6% (conversation) and 52.1%
    At 512 GB with sessions → 100 principals and a 1M-token quota, 988 of 12,031
    (8.2%, conversation) and 746 of 23,608 (3.2%, tool&agent) requests have
    `p_virt > p_glob`, i.e. would recompute and risk a deadline miss; net slack is
-   negative (−13.3% and −8.2%). Sum of quotas (100M tokens ≈ 5.6 TB of KV) far
+   negative (−13.3% and −8.2%). Sum of quotas (100M tokens = 5.7 TB of KV at 57,344 bytes per token) far
    exceeds the pool.
 5. 828 (conversation) and 725 (tool&agent) requests exceed Qwen2.5-7B's
    native 32,768-token context; testbed runs will need YaRN or a length cap.
