@@ -82,13 +82,67 @@ what global sharing saves. Global sharing saves 35.6% (conversation) and 52.1%
 5. 828 (conversation) and 725 (tool&agent) requests exceed Qwen2.5-7B's
    native 32,768-token context; testbed runs will need YaRN or a length cap.
 
+## Week-3: Mirage versus per-principal salting (simulation)
+
+**Run:** [`results/2026-10-22_salt-compare/`](results/2026-10-22_salt-compare/), code at
+commit `134870b` (clean tree). `make salt-report RUN=results/2026-10-22_salt-compare`
+rebuilds `summary.csv` from the per-request raw files (checked: byte-identical).
+
+**Question.** If slack is small, does Mirage still do less prefill work than
+salting on the same hardware (goal G3)? **Method** (`sim/salt.py`): one shared
+physical LRU pool, keyed four ways. *Global*: by block. *Salt*: by
+(principal, block), as with vLLM `cache_salt` on every request. *Salt+public*:
+salted except for the popular template blocks, which are unsalted and pinned.
+*Mirage*: by block with the same blocks pinned (Mirage's physical sharing is
+global). Same principal assignments and simulation rules as the slack run; pools
+of unbounded, 2048, 512 and 128 GB. Work is prefill FLOPs (Qwen2.5-7B).
+Each cell below is the prefill FLOPs Mirage saves, as a share of the baseline's.
+
+| Principal assignment | Pool | vs Salt: conv. | vs Salt: tool&agent | vs Salt+public: both traces |
+| --- | --- | --- | --- | --- |
+| sessions → 100 principals | unbounded | 0.0% | 0.7% | 0.0% |
+| sessions → 100 principals | 128 GB | 0.6% | 14.4% | 0.0% |
+| sessions → 1000 principals | unbounded | 0.4% | 7.0% | 0.0% |
+| sessions → 1000 principals | 128 GB | 2.9% | 30.0% | 0.0% |
+| each session its own principal | unbounded | 2.6% | 35.5% | 0.0% |
+| each session its own principal | 512 GB | 3.1% | 37.3% | 0.0% |
+| each request random of 100 (upper bound) | unbounded | 33.1% | 33.2% | 33.1% / 32.9% |
+| each request random of 100 (upper bound) | 128 GB | 6.8% | 18.0% | 6.4% / 8.1% |
+
+Full table: 48 configurations in `summary.csv`.
+
+**What this shows.**
+
+1. **Against plain salting, Mirage saves up to ~37% of prefill work on the tool&agent
+   trace, and more as the pool shrinks** (sessions → 1000 principals: 7.0% unbounded,
+   30.0% at 128 GB), because salting stores a copy of each shared template per
+   principal and evicts more. On the conversation trace, whose only template is one
+   block, the gain is at most 3.5%.
+2. **Against salting with an unsalted public set, Mirage saves exactly 0% under every
+   session-based assignment and every pool size (40 of 40 configurations).** This is
+   structural, not measured: popularity can only fall along a chain, so any shared
+   non-template block puts both requests in one session, hence one principal. Under
+   this method, principals share nothing but templates, and salt+public already
+   shares those.
+3. **Only the upper bound shows a Mirage-specific gain** (6–33%), and it splits
+   conversations across tenants.
+
+**Implication for the paper (not a measurement).** On these traces, Mirage's
+capacity advantage over isolation comes from the public set, which a salting
+baseline that leaves public prefixes unsalted also gets. A capacity gain unique to
+Mirage needs tenants that share non-public content; these traces cannot show
+whether real tenants do. Mirage's distinct value over salt+public would then be
+security (A6, the channel §4 lists as surviving salting) rather than capacity.
+That claim still needs the testbed.
+
 ## Week-3 go/pivot
 
 Not decided. The brief's criterion needs "slack is material", which has no
 threshold yet, and A2–A4/A6 cannot be confirmed without a testbed. The slack
 result above depends on an unknowable principal assignment; on the most
 plausible readings (sessions belong to one tenant; shared templates are public
-or one tenant's own) it is near zero.
+or one tenant's own) it is near zero, and Mirage does no less prefill work than
+salting with an unsalted public set.
 
 ## Observations from documentation and data (not measurements)
 
