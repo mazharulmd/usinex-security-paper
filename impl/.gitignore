@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+.pytest_cache/
+data/traces/
+# The repo root ignores *.log for LaTeX; raw serving logs under results/ must be kept.
+!results/**/*.log
