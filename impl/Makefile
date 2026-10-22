@@ -1,7 +1,7 @@
 # Every figure and number regenerates from the raw records in a results/ run directory.
 PY := .venv/bin/python
 
-.PHONY: venv traces test analyze slack slack-report
+.PHONY: venv traces test analyze slack slack-report salt salt-report
 
 venv:
 	python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt
@@ -25,3 +25,11 @@ slack:
 slack-report:
 	@test -n "$(RUN)" || (echo "usage: make slack-report RUN=results/<date>_slack-sim" && exit 1)
 	$(PY) -m sim.run_slack report $(RUN)
+
+# Week-3 Mirage-vs-salting comparison: full sweep into results/<date>_salt-compare/
+salt:
+	$(PY) -m sim.run_salt run
+
+salt-report:
+	@test -n "$(RUN)" || (echo "usage: make salt-report RUN=results/<date>_salt-compare" && exit 1)
+	$(PY) -m sim.run_salt report $(RUN)
