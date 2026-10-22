@@ -1,0 +1,20 @@
+\section{Ethics Considerations}
+\label{app:ethics}
+
+\todo{Follow the USENIX Security '27 ethics guidance (expect the same for '28).
+Draft points:}
+\begin{itemize}
+\item \textbf{Stakeholders.} API users whose prompts could leak; operators of
+  \mc-style deployments; maintainers of vLLM, SGLang, LMCache and \mc.
+\item \textbf{Own infrastructure.} All attacks run on our testbed against
+  synthetic victims. No real user data is processed.
+\item \textbf{Public services.} Any measurement of public APIs is limited to
+  observing our own requests' metadata (\eg whether usage records report
+  cached tokens), never to inferring other customers' data. \todo{Decide
+  whether to do this at all.}
+\item \textbf{Disclosure.} We will notify \tbd{the \mc maintainers and affected
+  engine projects} at least \tbd{90} days before submission, with the attack
+  harness and suggested mitigations.
+\item \textbf{Release.} The defense is released openly; the attack harness is
+  released after disclosure windows close.
+\end{itemize}

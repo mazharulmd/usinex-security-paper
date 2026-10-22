@@ -1,0 +1,24 @@
+\section{Discussion and Limitations}
+\label{sec:discussion}
+
+\paragraph{Who pays.} Under \sys, cross-principal hits save the operator compute
+but no longer save the client latency or money. Whether that is acceptable is a
+product decision; the declared-public set and opt-in groups recover the reuse
+that is not sensitive. \todo{Quantify how much of the trace's reuse is
+plausibly public (system prompts, tool schemas).}
+
+\paragraph{Beyond prefix reuse.} Non-prefix reuse~\cite{yao2025cacheblend},
+semantic caches and sparse-attention retrieval create further shared state.
+The \vcd principle---decide observables from a private counterfactual---extends
+to them in principle, but the counterfactual (``would this chunk have been
+reusable privately?'') is harder to compute. \todo{One paragraph on
+non-prefix KV channels~\cite{spliceleak2026}.}
+
+\paragraph{Integrity.} \sys addresses confidentiality only. A shared,
+multi-writer pool also lets one bad writer corrupt every request that reuses a
+block~\cite{cachemecatchyou2026,bitflip2026kv}; that is complementary future work.
+
+\paragraph{Generality.} We build on \mc's design, but the attacks need only a
+cluster-wide pool, tiers, cache-aware admission and usage reporting, which
+\todo{list: LMCache remote tiers, SGLang HiCache, Dynamo KV routing} also
+have.

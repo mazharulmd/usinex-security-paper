@@ -1,0 +1,23 @@
+\begin{abstract}
+Disaggregated LLM serving systems such as \mc pool the DRAM and SSD of
+entire GPU clusters into a deduplicated KVCache that every request can reuse,
+cutting prefill computation substantially. We show that this sharing is
+observable in ways existing defenses do not address. Beyond the known
+time-to-first-token channel, a cluster-scale KVCache leaks through cache-aware
+admission control, through billed cached-token counts, through the latency
+ladder of its storage tiers, and through eviction pressure that survives
+per-tenant key salting. Current defenses close such channels only by
+partitioning or selectively isolating the cache, forfeiting the reuse that
+justifies the architecture.
+Our key insight is that confidentiality requires isolating what a principal can
+\emph{observe}, not what the system \emph{stores}. \sys keeps the physical
+KVCache global and deduplicated, but derives every client-visible
+quantity---first-token release time, admission decisions, and usage
+accounting---from a per-principal virtual cache with a fixed quota. A
+slack-aware scheduler converts the latency withheld from cross-tenant hits into
+capacity for other requests. We implement \sys on vLLM and \mc Store and
+evaluate it against six attacks using \mc production traces. \sys reduces
+all \tbd{six} channels to chance-level distinguishability while retaining
+\tbd{$\geq$90\%} of global sharing's prefill savings and serving \tbd{X\%} more
+SLO-compliant requests than per-tenant isolation.
+\end{abstract}

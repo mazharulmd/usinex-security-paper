@@ -1,0 +1,102 @@
+\section{Evaluation}
+\label{sec:eval}
+
+We answer five questions:
+\textbf{Q1} How strong are \A1--\A6 under realistic load (\cref{sec:eval-attacks})?
+\textbf{Q2} Does \sys close them, and how do existing defenses compare (\cref{sec:eval-defense})?
+\textbf{Q3} What capacity does \sys keep relative to global sharing and isolation (\cref{sec:eval-capacity})?
+\textbf{Q4} How sensitive is it to quotas, sharing structure, bandwidth and $\Lpub$ (\cref{sec:eval-sensitivity})?
+\textbf{Q5} What does it cost (\cref{sec:eval-overhead})?
+
+\subsection{Setup}
+\paragraph{Hardware and models.} \tbd{Nodes, GPUs, NICs.} Models:
+\tbd{Llama-3.1-8B, a 14B--32B Qwen model, and a 70B-class model (or dummy
+weights at 70B shape, as \mc's own reproducible evaluation used~\cite{qin2025mooncake})},
+plus \tbd{one MLA model} to test how smaller per-token KV changes channel strength.
+
+\paragraph{Workloads.} \mc's released conversation and tool\&agent
+traces~\cite{qin2025mooncake}, and its synthetic mix of ShareGPT, L-Eval and
+LooGLE in a 1:1:1 ratio. The traces carry remapped block hashes but no
+principal IDs; we assign principals by \tbd{session clustering on shared
+prefix chains} and sweep the number of principals and the share of
+cross-principal reuse. \todo{Validate the assignment method; it drives every
+capacity number.}
+
+\paragraph{Baselines.}
+\begin{itemize}
+\item \textbf{Global}: unrestricted \mc sharing (insecure performance ceiling).
+\item \textbf{Salt}: per-principal \texttt{cache\_salt}~\cite{vllmcachesalt}.
+\item \textbf{KVGov}: salt at the divergence boundary~\cite{addagada2026kvgov}.
+\item \textbf{CacheSolidarity}: detect-and-isolate~\cite{pennas2026cachesolidarity},
+  ported from its released vLLM artifact.
+\item \textbf{SafeKV}: sensitivity-based selective sharing~\cite{chu2025safekv}.
+\item \textbf{Pad}: constant TTFT for all requests.
+\item \textbf{\sys} and ablations: no slack reclamation; admission on $\pp$; no
+  accounting scrubber; no pinning.
+\end{itemize}
+
+\paragraph{Metrics.} Security: per-channel AUC, attack success rate, queries per
+recovered token, deadline-miss rate. Performance: \mc's effective request
+capacity (fraction of requests meeting both TTFT and TBT
+SLOs)~\cite{qin2025mooncake}, prefill GPU-seconds per request, physical hit
+rate, TTFT p50/p99, TBT p99.
+
+\subsection{Q1: Attack strength}
+\label{sec:eval-attacks}
+\begin{figure}[t]
+\centering
+\placeholderfig{1.6in}{AUC of \A1--\A6 (bars) at low, moderate and high load,
+under Global and Salt.}
+\caption{\tbd{Takeaway: which channels survive load and salting.}}
+\label{fig:attack-auc}
+\end{figure}
+\tbd{Results for \cref{tab:attacks} and \cref{fig:attack-auc}.}
+
+\subsection{Q2: Closing the channels}
+\label{sec:eval-defense}
+\begin{table}[t]
+\centering\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Defense & \A1 & \A2 & \A3 & \A4 & \A5 & \A6 \\
+\midrule
+Global          & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} \\
+Salt            & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} \\
+KVGov           & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} \\
+CacheSolidarity & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} \\
+SafeKV          & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} \\
+Pad             & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} \\
+\sys            & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} & \tbd{--} \\
+\bottomrule
+\end{tabular}
+\caption{Attack AUC per defense at moderate load (0.5 = chance).}
+\label{tab:defense-auc}
+\end{table}
+\tbd{Results.} We also run an adaptive attacker that modulates load to force
+misses and probes $\Lpub$ directly, and report misses per \tbd{hour} and bits
+leaked under \cref{conj:bound}.
+
+\subsection{Q3: Capacity}
+\label{sec:eval-capacity}
+\begin{figure}[t]
+\centering
+\placeholderfig{1.6in}{Effective request capacity vs.\ TBT SLO (as in \mc's
+Fig.~1) for Global, Salt, KVGov, CacheSolidarity and \sys, conversation trace.}
+\caption{\tbd{Takeaway: \sys between Salt and Global, closer to Global.}}
+\label{fig:capacity}
+\end{figure}
+\tbd{Results: capacity, prefill GPU time, and the TTFT cost borne by requests
+whose only hits are cross-principal.} Ablation: without slack reclamation, how
+much of the gain over Salt disappears.
+
+\subsection{Q4: Sensitivity}
+\label{sec:eval-sensitivity}
+\tbd{Sweeps:} number of principals; quota $Q$; fraction of cross-principal
+reuse; declared-public set size; network bandwidth from 25 to 400\,Gbps (where
+\mc reports a cliff below 100\,Gbps~\cite{qin2025mooncake}); load-signal levels
+$k$ and epoch $\Delta$ against measured leakage.
+
+\subsection{Q5: Overheads}
+\label{sec:eval-overhead}
+\tbd{\vcd memory per active principal and in total; Conductor CPU per request;
+release-controller buffering; pin budget used.}

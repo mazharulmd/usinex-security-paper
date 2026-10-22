@@ -1,0 +1,40 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{KV-cache side channels.} Song \etal show TTFT channels from shared KV
+and semantic caches and find cache sharing in commercial
+APIs~\cite{song2024earlybird}. PromptPeek reconstructs prompts by exploiting
+longest-prefix-match scheduling~\cite{wu2025promptpeek}; InputSnatch steals
+inputs through timing~\cite{zheng2024inputsnatch}; Gu \etal audit prompt caching
+across API providers~\cite{gu2025auditing}. Later work extends attacks to
+non-prefix reuse in RAG~\cite{spliceleak2026}, studies how load degrades their
+reliability~\cite{abubakar2026contention}, and recovers inputs from KV contents
+themselves~\cite{luo2026shadow}. All of this targets a single engine; we study
+the cluster tier and its non-timing channels.
+
+\paragraph{Defenses.} Per-tenant salting is now built into
+engines~\cite{vllmcachesalt,dynamonvext}. KVGov salts from the divergence point
+to keep shared preambles~\cite{addagada2026kvgov}; SafeKV shares only blocks
+judged non-sensitive~\cite{chu2025safekv}; CacheSolidarity isolates prefixes
+once cross-user reuse looks suspicious~\cite{pennas2026cachesolidarity}. Each
+reduces physical sharing and addresses TTFT. \sys keeps physical sharing and
+covers admission and accounting as well.
+
+\paragraph{Timing-channel mitigation and deduplication.} Releasing outputs on a
+schedule computed from public information is predictive
+mitigation~\cite{askarov2010predictive,zhang2011predictive}, itself grounded in
+noninterference~\cite{goguen1982security}. Cross-user deduplication in cloud
+storage was shown to leak file existence~\cite{harnik2010dedup}, motivating
+proofs of ownership~\cite{halevi2011pow}; page deduplication and the OS page
+cache leak similarly~\cite{gruss2019pagecache}. Cache partitioning against
+co-resident attackers is long studied~\cite{ristenpart2009cloud,yarom2014flush}.
+\sys's virtual cache is the counterfactual that gives predictive mitigation its
+schedule in a KV store.
+
+\paragraph{KV-centric serving.} \mc~\cite{qin2025mooncake} builds on prefill/decode
+disaggregation~\cite{zhong2024distserve,patel2024splitwise}, chunked
+prefill~\cite{agrawal2024sarathi}, paged KV~\cite{kwon2023vllm}, radix-tree
+reuse~\cite{zheng2024sglang} and hierarchical KV
+caching~\cite{gao2024cachedattention}; LMCache~\cite{liu2025lmcache} and
+CacheBlend~\cite{yao2025cacheblend} broaden reuse. None of these considers
+tenants.

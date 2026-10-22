@@ -1,0 +1,73 @@
+\section{Security Analysis}
+\label{sec:security}
+
+\todo{The statements below are proof sketches to be turned into full proofs
+(or a mechanized model) before submission. Nothing here is claimed as proved yet.}
+
+\subsection{Isolation outside misses}
+\begin{proposition}[sketch]
+\label{prop:oi}
+Consider any two executions in which principal $p$ submits the same requests at
+the same times and $\Lpub$ takes the same values. If no request of $p$ misses its
+deadline in either execution, then $p$'s admission outcomes, first-token release
+times and usage records are identical in both.
+\end{proposition}
+
+\noindent\emph{Sketch.} By induction over $p$'s requests. $p$'s \vcd list is
+updated only by $p$'s own requests (\cref{sec:vcd}), and the public set is
+fixed, so $\pv$ is the same in both executions. The deadline in
+\cref{eq:deadline}, the admission test in \cref{alg:conductor} and the usage
+record are functions of $(t_r, n, \pv, \Lpub)$ only. Without a miss, release
+happens at $D_r$. Tokens after the first are released with their measured
+spacing, which depends on decode-batch contention; we place that in $\Lpub$'s
+scope (\cref{sec:threat}) and do not claim isolation for it. \qed
+
+\subsection{Bounding what misses leak}
+A miss releases the first token at $f_r > D_r$, and $f_r$ can depend on
+physical state. Two factors limit the damage. First, misses are observable to
+\sys, so they can be counted, rate-limited and reported. Second, after each
+miss \sys enlarges the principal's bucket for the rest of the epoch, the
+penalty schedule used in predictive mitigation, for which Askarov, Zhang and
+Myers bound total leakage by a polylogarithmic function of elapsed
+time~\cite{askarov2010predictive,zhang2011predictive}.
+
+\begin{conjecture}
+\label{conj:bound}
+Over $E$ epochs with $M$ misses in total, a principal learns at most
+$E\log_2 k$ bits from $\Lpub$ plus $O(M \log_2 (T_{\max}/\beta))$ bits from
+misses, where $T_{\max}$ is the largest release delay.
+\end{conjecture}
+\todo{Prove by adapting the predictive-mitigation argument; check that its
+assumptions (a public schedule, a bounded set of release times) hold for
+\cref{eq:deadline}.}
+
+\subsection{Coverage of the attacks}
+\begin{itemize}
+\item \textbf{\A1--\A3 (timing).} Global hits, the tier that served a block and
+  its replica count change only $f_r$, never $D_r$. Outside misses they are
+  invisible.
+\item \textbf{\A4 (admission).} Admission depends on $\pv$ and $\Lpub$, not on the
+  global match.
+\item \textbf{\A5 (accounting).} Cached tokens are reported as $\pv$.
+\item \textbf{\A6 (eviction).} The attacker's \emph{virtual} list is evicted only
+  by its own requests. Physical eviction of its blocks causes recomputation and,
+  at worst, a miss, which the pin budget makes rare and the bound above covers.
+\item \textbf{Sybils.} Each principal has an independent list, so many attacker
+  principals share nothing that a single one does not.
+\end{itemize}
+
+\subsection{Residual channels}
+\paragraph{The public load signal.} Cross-principal hits reduce real load and so
+can shift $\Lpub$. This channel carries at most $\log_2 k$ bits per epoch about
+aggregate load and none about any specific prefix; $k$ and $\Delta$ are
+operator knobs (\cref{sec:eval-sensitivity}).
+
+\paragraph{Decode contention.} TBT depends on who else is decoding, as in any
+shared GPU deployment, isolated caches included. \sys does not change it.
+
+\paragraph{Mis-declared public content.} A secret registered in the public set
+is unprotected. The set should hold only operator-owned or published content.
+
+\paragraph{Outside the serving path.} Dashboards, logs or support tools that
+expose physical hit rates per principal reopen the channel; \sys's guarantee
+covers only the client API.

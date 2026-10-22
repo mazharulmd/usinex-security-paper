@@ -1,0 +1,53 @@
+\section{Background}
+\label{sec:background}
+
+\subsection{Prefix caching}
+A decoder-only transformer computes, for each prompt token, key and value
+vectors at every layer. A token's KV depends only on itself and the tokens
+before it, so KV computed for one prompt is valid for any later prompt that
+shares the same prefix~\cite{qin2025mooncake}. Engines store KV in fixed-size
+blocks and key each block by a hash chained over its own tokens and its
+prefix, $h_j = H(h_{j-1}, \mathrm{tokens}_j)$; a lookup returns the longest
+matching chain from the first block~\cite{kwon2023vllm,addagada2026kvgov}. A
+hit skips that part of prefill, cutting TTFT roughly in proportion to the
+prefix length.
+
+\subsection{\mc: a KVCache-centric architecture}
+\mc~\cite{qin2025mooncake} separates prefill and decode onto different node
+pools and turns the KVCache into a cluster-wide storage tier.
+
+\paragraph{\mc Store.} KV blocks of 16--512 tokens (256 in the paper's
+evaluation) live in a distributed pool built from the host DRAM and SSD of
+every node. Each block's key covers the block and its prefix, so identical
+content is deduplicated cluster-wide. Hot blocks are replicated across nodes to
+avoid fetch congestion, and when the pool fills, blocks are evicted LRU unless in
+use. A transfer engine moves blocks over multiple RDMA NICs per node; the paper
+reports 87\,GB/s and 190\,GB/s on 4$\times$200 and 8$\times$400\,Gbps fabrics.
+The released store adds per-object replica counts and soft and hard pins~\cite{mooncakerepo}.
+
+\paragraph{Conductor.} A global scheduler places each request
+(Algorithm~1 in~\cite{qin2025mooncake}). It hashes the prompt into block keys,
+finds each prefill instance's prefix-match length, and estimates TTFT per
+instance as transfer time for any remote blocks plus queueing plus prefill time,
+the last from a regression fitted offline on request length and match length.
+It picks the instance with the lowest estimate, and if the TTFT or TBT SLO
+cannot be met, returns HTTP 429 instead of serving the request. Placement
+decisions also trigger replication of hot blocks.
+
+\paragraph{Why it matters here.} Three design choices that make \mc fast also
+make it observable: (i) deduplication is keyed by content alone, with no
+principal in the key; (ii) admission is a function of the \emph{global} match
+length; and (iii) a block's physical location---local HBM, local DRAM, remote
+DRAM, SSD---depends on other requests' access history. The paper evaluates a
+single first-party service and does not discuss tenancy or
+confidentiality~\cite{qin2025mooncake}.
+
+\subsection{Multi-tenant serving}
+LLMs are mostly sold as APIs to many mutually distrusting customers. Responses
+expose TTFT and inter-token time (TBT) to the client, HTTP status codes, and
+usage metadata that typically includes the number of cached prompt tokens,
+which providers bill at a discount~\needcite{provider docs}. Engines offer
+per-request \texttt{cache\_salt} to separate tenants' key spaces; NVIDIA Dynamo
+uses the same salt to namespace KV-aware routing~\cite{vllmcachesalt,dynamonvext}.
+Salting is only as strong as its plumbing: one 2026 vLLM bug dropped the salt on
+tool continuations, restoring a cached-token oracle~\cite{cve2026105752}.

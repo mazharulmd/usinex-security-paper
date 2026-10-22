@@ -1,0 +1,96 @@
+\section{Introduction}
+\label{sec:intro}
+
+Large language model (LLM) serving has become a storage problem. Every request
+first runs a \emph{prefill} pass that turns its prompt into key--value (KV)
+tensors, and for long prompts this pass dominates cost and time-to-first-token
+(TTFT). Serving systems therefore cache KV tensors and reuse them whenever a new
+prompt shares a prefix with an old one~\cite{kwon2023vllm,zheng2024sglang}.
+\mc~\cite{qin2025mooncake}, the serving platform of Moonshot AI's Kimi and a
+FAST'25 Best Paper, pushed this idea to cluster scale: it pools the otherwise idle
+CPU DRAM, SSD and RDMA NICs of a GPU cluster into a petabyte-scale,
+deduplicated KVCache, and schedules every request around where its reusable
+blocks live. On real traces this raised effective request capacity by
+59\%--498\% over vLLM baselines~\cite{qin2025mooncake}. The design is no longer
+one company's: \mc's store and transfer engine now back cluster-wide KV pools in
+vLLM, SGLang and LMCache~\cite{mooncakerepo,liu2025lmcache}.
+
+A shared cache is shared state, and shared state leaks. A line of recent work
+shows that prefix caching in a single serving engine creates a TTFT side channel:
+an attacker who guesses part of another user's prompt sees a faster first token
+when the guess is cached, and can reconstruct system prompts and user inputs
+token by token~\cite{song2024earlybird,wu2025promptpeek,zheng2024inputsnatch}.
+Defenses followed. Engines now let operators salt cache keys per
+tenant~\cite{vllmcachesalt,dynamonvext}; KVGov salts at the point where prompts
+diverge~\cite{addagada2026kvgov}; SafeKV shares only blocks it judges
+non-sensitive~\cite{chu2025safekv}; CacheSolidarity detects suspicious reuse and
+isolates the affected prefixes~\cite{pennas2026cachesolidarity}.
+
+These defenses share two limits. First, each buys confidentiality by giving up
+\emph{physical} sharing, either everywhere or wherever a detector fires; in a
+\mc-style cluster, where the global pool exists precisely to raise hit rates
+beyond what any single node can hold, that cost lands on the system's main
+benefit. Second, each reasons about one engine and one channel, TTFT. A
+cluster-scale KVCache exposes more. Its scheduler admits or rejects requests
+based on predicted TTFT, which depends on the global prefix match. Commercial
+APIs report and discount cached tokens in every
+response~\needcite{provider prompt-caching docs, e.g.\ OpenAI cached\_tokens
+usage field}, and a 2026 vLLM vulnerability turned that count into a
+cross-tenant membership oracle~\cite{cve2026105752}. Its blocks live in
+tiers whose latencies form a ladder that reflects how recently and how widely a
+prefix was used. And its capacity is shared, so one tenant's traffic evicts
+another's blocks even when keys are salted.
+
+\paragraph{This paper.} We make two contributions. The first is an attack study of
+cluster-scale, tiered KVCache serving (\cref{sec:attacks}). We build six attacks
+against a \mc deployment (\A1--\A6), four of which (\A2--\A4, \A6) we have not
+found in prior work \todo{re-run the prior-art search before submission}, and show that \tbd{N of 6} succeed with \tbd{AUC $\geq$ X} under
+realistic load; the admission and accounting channels require no timing at all,
+and the eviction channel survives per-tenant salting.
+
+The second is \sys, a defense built on one observation: \emph{confidentiality
+requires isolating what a principal can observe, not what the system stores.}
+\sys leaves \mc's physical layer unchanged---blocks remain globally deduplicated,
+replicated and transferred over RDMA---and adds an observable layer that makes
+every client-visible quantity a function of the principal's own history and a
+coarse public load signal. A per-principal Virtual Cache Directory (\vcd)
+answers how long a prefix the principal would have hit in a private cache of
+fixed quota. A release controller holds the first token until a deadline
+computed from that virtual hit length; admission decisions and usage accounting
+use it too. Because the physical cache still hits, the GPU finishes early; a
+slack-aware scheduler reinvests that time in other requests. To a client, \sys
+is indistinguishable from an isolated system; to the operator, it does the
+compute of a shared one.
+
+The idea of releasing outputs on a schedule that depends only on public
+information has a long history in timing-channel
+mitigation~\cite{askarov2010predictive,zhang2011predictive}, and the leakage of
+cross-user deduplication was first studied in cloud
+storage~\cite{harnik2010dedup}. \sys's contribution is to apply observational
+isolation to a disaggregated KV store, where the right schedule comes from a
+\emph{counterfactual} cache rather than from padding, where non-timing
+observables must be covered by the same counterfactual, and where the withheld
+latency can be recovered as throughput.
+
+We implement \sys on vLLM with the \mc Store connector and a \mc-style global
+scheduler (\cref{sec:impl}). On \tbd{testbed} with \mc's released traces,
+\sys \tbd{brings all six channels to AUC $\leq$ 0.55}, keeps
+\tbd{$\geq$90\%} of the prefill GPU time saved by unrestricted global sharing,
+and serves \tbd{X\%} more SLO-compliant requests than per-tenant isolation, at a
+cost of \tbd{Y\%} higher median TTFT for requests whose only hits are
+cross-tenant (\cref{sec:eval}).
+
+\paragraph{Contributions.}
+\begin{itemize}
+\item The first systematic study of leakage in cluster-scale, tiered KVCache
+  serving, including channels through admission control, usage accounting, tier
+  latency, replication and eviction (\cref{sec:attacks}).
+\item Observational isolation for shared KV caches: a definition relative to a
+  public load signal, and a design that meets it while preserving physical
+  sharing (\cref{sec:threat,sec:design,sec:security}).
+\item \sys, a prototype on vLLM and \mc Store, with a slack-aware scheduler that
+  converts withheld latency into capacity (\cref{sec:design,sec:impl}).
+\item An evaluation against six attacks and five defenses on \mc production
+  traces (\cref{sec:eval}). We will release code, attack harnesses and
+  principal-labelled trace derivatives (\cref{app:openscience}).
+\end{itemize}

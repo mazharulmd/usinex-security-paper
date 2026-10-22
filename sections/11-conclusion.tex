@@ -1,0 +1,10 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+Cluster-scale KV caches turn prefix reuse from a node optimization into shared
+infrastructure, and with it into a shared leak that reaches beyond timing to
+admission, billing and eviction. \sys shows that the fix need not give up the
+sharing: by deciding what each principal may observe from a private,
+counterfactual cache while the physical cache stays global, it makes a
+\mc-style system look isolated to its clients and shared to its operator.
+\tbd{One sentence with the headline numbers.}

@@ -1,0 +1,21 @@
+\section{Implementation}
+\label{sec:impl}
+
+\todo{Fill in as built. Target components and sizes:}
+\begin{itemize}
+\item \textbf{Serving stack.} vLLM \tbd{version} with prefill/decode
+  disaggregation and the \mc Store connector~\cite{mooncakerepo}; \mc
+  Transfer Engine over RoCE.
+\item \textbf{Conductor.} A global router implementing \mc's Algorithm~1, then
+  \cref{alg:conductor}. \todo{Decide whether to extend an existing KV-aware
+  router (llm-d, Dynamo) or write a standalone one; \tbd{LoC}.}
+\item \textbf{\vcd.} An in-memory, per-principal LRU keyed by the same block
+  hashes the store uses, sharded with the Conductor; \tbd{LoC}.
+\item \textbf{Release controller and accounting scrubber.} In the
+  OpenAI-compatible API front end: holds the first streamed token until $D_r$,
+  rewrites usage records, strips internal headers; \tbd{LoC}.
+\item \textbf{Pinning.} Uses \mc Store's soft-pin interface; \tbd{LoC}.
+\item \textbf{Attack harness.} Client-side timing with \tbd{clock source},
+  calibration and classifiers for \A1--\A6; \tbd{LoC}.
+\end{itemize}
+\sys changes no model, kernel or KV-store code (G4).

@@ -1,0 +1,266 @@
+% references.bib -- Mirage draft. Every entry below was checked against the source page
+% on 2026-10-22 unless its note field says "VERIFY". Run a citation check before submission.
+
+% ---------------- Benchmark paper and its ecosystem ----------------
+@inproceedings{qin2025mooncake,
+  author    = {Ruoyu Qin and Zheming Li and Weiran He and Jialei Cui and Feng Ren and Mingxing Zhang and Yongwei Wu and Weimin Zheng and Xinran Xu},
+  title     = {Mooncake: Trading More Storage for Less Computation --- A {KVCache-centric} Architecture for Serving {LLM} Chatbot},
+  booktitle = {23rd USENIX Conference on File and Storage Technologies (FAST 25)},
+  year      = {2025},
+  pages     = {155--170},
+  publisher = {USENIX Association},
+  url       = {https://www.usenix.org/conference/fast25/presentation/qin}
+}
+
+@misc{mooncakerepo,
+  author       = {{kvcache-ai}},
+  title        = {Mooncake: A {KVCache}-centric Disaggregated Architecture for {LLM} Serving (source repository)},
+  howpublished = {\url{https://github.com/kvcache-ai/Mooncake}},
+  note         = {Accessed October 2026}
+}
+
+@misc{liu2025lmcache,
+  author       = {Y. Liu and Y. Cheng and J. Yao and Y. An and X. Chen and S. Feng and Y. Huang and S. Shen and R. Zhang and K. Du and others},
+  title        = {{LMCache}: An Efficient {KV} Cache Layer for Enterprise-Scale {LLM} Inference},
+  howpublished = {arXiv:2510.09665},
+  year         = {2025},
+  note         = {VERIFY: expand initials to full names}
+}
+
+% ---------------- LLM serving ----------------
+@inproceedings{kwon2023vllm,
+  author    = {Woosuk Kwon and Zhuohan Li and Siyuan Zhuang and Ying Sheng and Lianmin Zheng and Cody Hao Yu and Joseph Gonzalez and Hao Zhang and Ion Stoica},
+  title     = {Efficient Memory Management for Large Language Model Serving with {PagedAttention}},
+  booktitle = {Proceedings of the 29th Symposium on Operating Systems Principles (SOSP)},
+  year      = {2023},
+  pages     = {611--626}
+}
+
+@misc{zheng2024sglang,
+  author       = {Lianmin Zheng and Liangsheng Yin and Zhiqiang Xie and Jeff Huang and Chuyue Sun and Cody Hao Yu and Shiyi Cao and Christos Kozyrakis and Ion Stoica and Joseph E. Gonzalez and others},
+  title        = {Efficiently Programming Large Language Models using {SGLang}},
+  howpublished = {arXiv:2312.07104},
+  year         = {2023},
+  note         = {VERIFY: cite the NeurIPS 2024 version if preferred}
+}
+
+@inproceedings{zhong2024distserve,
+  author    = {Yinmin Zhong and Shengyu Liu and Junda Chen and Jianbo Hu and Yibo Zhu and Xuanzhe Liu and Xin Jin and Hao Zhang},
+  title     = {{DistServe}: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving},
+  booktitle = {18th USENIX Symposium on Operating Systems Design and Implementation (OSDI 24)},
+  year      = {2024},
+  pages     = {193--210}
+}
+
+@inproceedings{patel2024splitwise,
+  author    = {Pratyush Patel and Esha Choukse and Chaojie Zhang and Aashaka Shah and {\'I}{\~n}igo Goiri and Saeed Maleki and Ricardo Bianchini},
+  title     = {Splitwise: Efficient Generative {LLM} Inference Using Phase Splitting},
+  booktitle = {51st Annual International Symposium on Computer Architecture (ISCA)},
+  year      = {2024},
+  pages     = {118--132}
+}
+
+@inproceedings{agrawal2024sarathi,
+  author    = {Amey Agrawal and Nitin Kedia and Ashish Panwar and Jayashree Mohan and Nipun Kwatra and Bhargav Gulavani and Alexey Tumanov and Ramachandran Ramjee},
+  title     = {Taming Throughput-Latency Tradeoff in {LLM} Inference with {Sarathi-Serve}},
+  booktitle = {18th USENIX Symposium on Operating Systems Design and Implementation (OSDI 24)},
+  year      = {2024},
+  pages     = {117--134}
+}
+
+@inproceedings{gao2024cachedattention,
+  author    = {Bin Gao and Zhuomin He and Puru Sharma and Qingxuan Kang and Djordje Jevdjic and Junbo Deng and Xingkun Yang and Zhou Yu and Pengfei Zuo},
+  title     = {Cost-Efficient Large Language Model Serving for Multi-turn Conversations with {CachedAttention}},
+  booktitle = {2024 USENIX Annual Technical Conference (USENIX ATC 24)},
+  year      = {2024},
+  pages     = {111--126}
+}
+
+@inproceedings{yao2025cacheblend,
+  author    = {Jiayi Yao and Hanchen Li and Yuhan Liu and Siddhant Ray and Yihua Cheng and Qizheng Zhang and Kuntai Du and Shan Lu and Junchen Jiang},
+  title     = {{CacheBlend}: Fast Large Language Model Serving for {RAG} with Cached Knowledge Fusion},
+  booktitle = {Proceedings of the Twentieth European Conference on Computer Systems (EuroSys)},
+  year      = {2025},
+  pages     = {94--109}
+}
+
+% ---------------- KV-cache attacks ----------------
+@misc{song2024earlybird,
+  author       = {L. Song and Z. Pang and W. Wang and Z. Wang and X. Wang and H. Chen and W. Song and Y. Jin and D. Meng and R. Hou},
+  title        = {The Early Bird Catches the Leak: Unveiling Timing Side Channels in {LLM} Serving Systems},
+  howpublished = {arXiv:2409.20002},
+  year         = {2024},
+  note         = {VERIFY: a later version is cited elsewhere as IEEE TIFS 2025}
+}
+
+@inproceedings{wu2025promptpeek,
+  author    = {G. Wu and Z. Zhang and Y. Zhang and W. Wang and J. Niu and Y. Wu and Y. Zhang},
+  title     = {I Know What You Asked: Prompt Leakage via {KV}-Cache Sharing in Multi-Tenant {LLM} Serving},
+  booktitle = {Network and Distributed System Security Symposium (NDSS)},
+  year      = {2025},
+  doi       = {10.14722/ndss.2025.241772},
+  note      = {VERIFY: expand initials to full names}
+}
+
+@misc{zheng2024inputsnatch,
+  author       = {X. Zheng and H. Han and S. Shi and Q. Fang and Z. Du and X. Hu and Q. Guo},
+  title        = {{InputSnatch}: Stealing Input in {LLM} Services via Timing Side-Channel Attacks},
+  howpublished = {arXiv:2411.18191},
+  year         = {2024},
+  note         = {VERIFY: expand initials to full names}
+}
+
+@inproceedings{gu2025auditing,
+  author    = {Chenchen Gu and Xiang Lisa Li and Rohith Kuditipudi and Percy Liang and Tatsunori Hashimoto},
+  title     = {Auditing Prompt Caching in Language Model {APIs}},
+  booktitle = {Proceedings of the 42nd International Conference on Machine Learning (ICML)},
+  year      = {2025}
+}
+
+@inproceedings{luo2026shadow,
+  author    = {Zhifan Luo and Shuo Shao and Su Zhang and Lijing Zhou and Yuke Hu and Chenxu Zhao and Zhihao Liu and Zhan Qin},
+  title     = {Shadow in the Cache: Unveiling and Mitigating Privacy Risks of {KV}-cache in {LLM} Inference},
+  booktitle = {Network and Distributed System Security Symposium (NDSS)},
+  year      = {2026}
+}
+
+@misc{spliceleak2026,
+  author       = {He Sun and Shinan Liu and Siyuan Ma and Junhao Li and Mingjun Xiao and Wenhao Jiang},
+  title        = {Agent-Assisted Side-Channel Attacks on Non-Prefix {KV} Cache in {RAG}},
+  howpublished = {arXiv:2606.21842},
+  year         = {2026}
+}
+
+@misc{abubakar2026contention,
+  author       = {Rana Abu Bakar},
+  title        = {Characterizing Contention-Induced Reliability Collapse in {KV}-Cache Timing Side Channels for Multi-Tenant {LLM} Serving},
+  howpublished = {arXiv:2609.06853},
+  year         = {2026}
+}
+
+@inproceedings{cachemecatchyou2026,
+  author    = {XiangFan Wu and Lingyun Ying and Guoqiang Chen and Yacong Gu and Haipeng Qu},
+  title     = {Cache Me, Catch You: Cache Related Security Threats in {LLM} Serving Frameworks},
+  booktitle = {Network and Distributed System Security Symposium (NDSS)},
+  year      = {2026}
+}
+
+@misc{bitflip2026kv,
+  author       = {Yuji Yamamoto and Satoshi Matsuura},
+  title        = {Bit-Flip Vulnerability of Shared {KV}-Cache Blocks in {LLM} Serving Systems},
+  howpublished = {arXiv:2604.17249},
+  year         = {2026}
+}
+
+@misc{cve2026105752,
+  author       = {{vLLM Project}},
+  title        = {{CVE-2026-105752}: Harmony tool continuations drop \texttt{cache\_salt}, restoring a cross-tenant prefix-cache membership oracle},
+  howpublished = {GitHub Security Advisory GHSA-935w-9g4m-p28p},
+  year         = {2026},
+  note         = {Fixed in vLLM 0.30.0}
+}
+
+% ---------------- KV-cache defenses ----------------
+@misc{chu2025safekv,
+  author       = {K. Chu and Z. Lin and D. Xiang and Z. Shen and J. Su and C. Chu and Y. Yang and W. Zhang and W. Wu and W. Zhang},
+  title        = {Selective {KV}-Cache Sharing to Mitigate Timing Side-Channels in {LLM} Inference},
+  howpublished = {arXiv:2508.08438},
+  year         = {2025},
+  note         = {VERIFY: expand initials to full names; v2 revised February 2026}
+}
+
+@misc{pennas2026cachesolidarity,
+  author       = {Panagiotis Georgios Pennas and Konstantinos Papaioannou and Marco Guarnieri and Thaleia Dimitra Doudali},
+  title        = {{CacheSolidarity}: Preventing Prefix Caching Side Channels in Multi-tenant {LLM} Serving Systems},
+  howpublished = {arXiv:2603.10726},
+  year         = {2026},
+  note         = {v2 retitled PrefixWall; artifact released for Middleware '26 -- VERIFY final venue and title}
+}
+
+@misc{addagada2026kvgov,
+  author       = {Tejasvi C. Addagada},
+  title        = {Governing the {KV} Cache: Preventing Timing Side-Channel Leakage in Multi-Tenant {LLM} Inference},
+  howpublished = {arXiv:2608.09225},
+  year         = {2026}
+}
+
+@misc{vllmcachesalt,
+  author       = {{vLLM Project}},
+  title        = {Automatic Prefix Caching and per-request \texttt{cache\_salt}},
+  howpublished = {\url{https://docs.vllm.ai/}},
+  note         = {Accessed October 2026. VERIFY exact page URL}
+}
+
+@misc{dynamonvext,
+  author       = {{NVIDIA}},
+  title        = {{NVIDIA Dynamo}: Request Extensions (nvext), Cache Salt and Tenant Isolation},
+  howpublished = {\url{https://docs.nvidia.com/dynamo/v1.3.0/additional-resources/nvidia-request-extensions-nvext.md}},
+  note         = {Accessed October 2026}
+}
+
+% ---------------- Classic side channels and mitigation ----------------
+@inproceedings{askarov2010predictive,
+  author    = {Aslan Askarov and Danfeng Zhang and Andrew C. Myers},
+  title     = {Predictive Black-Box Mitigation of Timing Channels},
+  booktitle = {Proceedings of the 17th ACM Conference on Computer and Communications Security (CCS)},
+  year      = {2010},
+  note      = {VERIFY pages}
+}
+
+@inproceedings{zhang2011predictive,
+  author    = {Danfeng Zhang and Aslan Askarov and Andrew C. Myers},
+  title     = {Predictive Mitigation of Timing Channels in Interactive Systems},
+  booktitle = {Proceedings of the 18th ACM Conference on Computer and Communications Security (CCS)},
+  year      = {2011},
+  note      = {VERIFY pages}
+}
+
+@inproceedings{goguen1982security,
+  author    = {Joseph A. Goguen and Jos{\'e} Meseguer},
+  title     = {Security Policies and Security Models},
+  booktitle = {IEEE Symposium on Security and Privacy},
+  year      = {1982},
+  note      = {VERIFY pages}
+}
+
+@article{harnik2010dedup,
+  author  = {Danny Harnik and Benny Pinkas and Alexandra Shulman-Peleg},
+  title   = {Side Channels in Cloud Services: Deduplication in Cloud Storage},
+  journal = {IEEE Security \& Privacy},
+  volume  = {8},
+  number  = {6},
+  year    = {2010},
+  note    = {VERIFY pages}
+}
+
+@inproceedings{halevi2011pow,
+  author    = {Shai Halevi and Danny Harnik and Benny Pinkas and Alexandra Shulman-Peleg},
+  title     = {Proofs of Ownership in Remote Storage Systems},
+  booktitle = {Proceedings of the 18th ACM Conference on Computer and Communications Security (CCS)},
+  year      = {2011},
+  note      = {VERIFY pages}
+}
+
+@inproceedings{ristenpart2009cloud,
+  author    = {Thomas Ristenpart and Eran Tromer and Hovav Shacham and Stefan Savage},
+  title     = {Hey, You, Get Off of My Cloud: Exploring Information Leakage in Third-Party Compute Clouds},
+  booktitle = {Proceedings of the 16th ACM Conference on Computer and Communications Security (CCS)},
+  year      = {2009},
+  note      = {VERIFY pages}
+}
+
+@inproceedings{yarom2014flush,
+  author    = {Yuval Yarom and Katrina Falkner},
+  title     = {{FLUSH+RELOAD}: A High Resolution, Low Noise, {L3} Cache Side-Channel Attack},
+  booktitle = {23rd USENIX Security Symposium (USENIX Security 14)},
+  year      = {2014},
+  pages     = {719--732}
+}
+
+@inproceedings{gruss2019pagecache,
+  author    = {Daniel Gruss and Erik Kraft and Trishita Tiwari and Michael Schwarz and Ari Trachtenberg and Jason Hennessey and Alex Ionescu and Anders Fogh},
+  title     = {Page Cache Attacks},
+  booktitle = {Proceedings of the 2019 ACM SIGSAC Conference on Computer and Communications Security (CCS)},
+  year      = {2019},
+  note      = {VERIFY author list and pages (preprint arXiv:1901.01161)}
+}

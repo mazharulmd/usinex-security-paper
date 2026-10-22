@@ -1,0 +1,21 @@
+% usenix-shim.sty -- FALLBACK ONLY.
+% Approximates the page layout of the official USENIX template (usenix-2020-09.sty):
+% US letter, 7in x 9in text block, two columns, 0.33in column gap, Times, 10pt.
+% main.tex loads the official usenix-2020-09.sty instead whenever it is on the TeX path
+% (Overleaf's USENIX template ships it). Do NOT submit with this shim; drop the official
+% style file next to main.tex before submission.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{usenix-shim}[2026/10/22 fallback approximating usenix-2020-09]
+\RequirePackage[letterpaper,textwidth=7in,textheight=9in,top=1in,
+  columnsep=0.33in,headheight=0pt,headsep=0pt,footskip=0.5in]{geometry}
+\RequirePackage{mathptmx}
+\RequirePackage[T1]{fontenc}
+\RequirePackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}[runin]{\normalsize\bfseries}{}{0em}{}[.]
+\titlespacing*{\section}{0pt}{1.6ex plus 0.5ex minus 0.2ex}{0.8ex plus 0.2ex}
+\titlespacing*{\subsection}{0pt}{1.2ex plus 0.4ex minus 0.2ex}{0.5ex plus 0.2ex}
+\titlespacing*{\subsubsection}{0pt}{0.8ex plus 0.3ex}{0.6em}
+\pagestyle{empty}
+\endinput

@@ -1,0 +1,66 @@
+\section{Threat Model and Goals}
+\label{sec:threat}
+
+\paragraph{System.} An operator runs a \mc-style cluster: disaggregated
+prefill and decode pools, a pooled DRAM/SSD KV store with content-keyed
+deduplication, and a cache-aware global scheduler. Clients are
+\emph{principals}---API keys or tenants---that the operator authenticates. The
+operator, the serving software and the hardware are trusted.
+
+\paragraph{Attacker.} The attacker controls one or more principals, possibly
+many (Sybils). It knows the model, block size, scheduling algorithm and
+approximate hardware, and may submit arbitrary prompts at chosen times subject
+to rate limits. For each request it observes everything a client sees: the
+admission outcome (including HTTP 429), the arrival time of every output token
+measured at its client, and the usage record (prompt, cached and output token
+counts, and the resulting charge). Its goals are to learn whether a prefix was
+processed for another principal (\emph{membership}), to reconstruct another
+principal's prompt (\emph{reconstruction}), or to learn how recently or how
+widely a prefix is used (\emph{activity}).
+
+\paragraph{Out of scope.} Attackers with code on cluster hosts or GPUs
+(microarchitectural channels, Rowhammer on KV memory~\cite{bitflip2026kv}),
+network observers of encrypted token streams, a malicious operator,
+semantic caches, non-prefix chunk reuse~\cite{yao2025cacheblend}, information
+the model itself memorizes, and denial of service. Contention in the
+\emph{decode} batch affects TBT in any shared system, isolated caches included;
+we treat it as part of the public load signal and do not claim to remove it.
+
+\subsection{Observations and the public load signal}
+For a request $r$ from principal $p$, let
+$o(r) = (a_r, \tau_r, \mathbf{t}_r, u_r)$ be its admission outcome, first-token
+release time relative to arrival, later token times, and usage record. The
+attacker's view is the sequence $\Obs_p$ of $o(r)$ over its requests.
+
+Some dependence on others is unavoidable: if the cluster is busy, everyone
+waits longer. \sys makes this dependence explicit through a \emph{public load
+signal} $\Lpub$: a load level drawn from $k$ values, published once per epoch of
+length $\Delta$. Every scheduling quantity that a client could observe may depend
+on $\Lpub$, and on nothing else outside the principal's own requests.
+
+\begin{definition}[Observational isolation]
+\label{def:oi}
+A serving system is \emph{observationally isolated} relative to $\Lpub$ if, for
+every principal $p$ and any two executions in which $p$ submits the same
+requests at the same times and $\Lpub$ takes the same values, the deterministic
+part of $\Obs_p$ is identical, and the remaining randomness in $\Obs_p$ is
+independent of every other principal's requests.
+\end{definition}
+
+An isolated cache with a fixed per-principal quota meets this definition but
+loses all cross-principal reuse. Through $\Lpub$, the definition admits leakage
+of at most $\log_2 k$ bits per epoch about \emph{aggregate} load, never about a
+specific prefix.
+
+\subsection{Goals}
+\begin{itemize}
+\item[\textbf{G1}] \textbf{Confidentiality.} Observational isolation for
+  admission, first-token time and usage, with every violation (a missed release
+  deadline, \cref{sec:design}) detected, counted and bounded.
+\item[\textbf{G2}] \textbf{Preserved sharing.} Physical reuse equal to
+  unrestricted global sharing: no block is recomputed because of \sys.
+\item[\textbf{G3}] \textbf{Capacity.} More SLO-compliant requests than
+  per-principal isolation on the same hardware.
+\item[\textbf{G4}] \textbf{Deployability.} No change to the model, kernels or
+  KV store; changes confined to the scheduler and the API front end.
+\end{itemize}

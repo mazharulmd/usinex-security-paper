@@ -1,0 +1,162 @@
+\section{\sys Design}
+\label{sec:design}
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[
+  font=\footnotesize,
+  box/.style={draw,rounded corners=3pt,minimum width=4.9cm,minimum height=1.25cm,
+              align=left,text width=4.6cm,inner sep=4pt},
+  arr/.style={-{Stealth[length=5pt]},thick,draw=black!70},
+  both/.style={{Stealth[length=5pt]}-{Stealth[length=5pt]},thick,draw=black!70},
+  lbl/.style={font=\scriptsize\itshape,text=black!70}]
+  % client
+  \node[box,minimum width=6.2cm,text width=5.9cm] (client) at (0,4.1)
+    {\textbf{Principal (any tenant, incl.\ attacker)}\\observes admission, token times, usage};
+  % observable layer
+  \node[box,fill=blue!6] (vcd)  at (-5.75,1.55) {\textbf{Virtual Cache Directory}\\per-principal LRU, quota $Q$;\\metadata only, yields $\pv$};
+  \node[box,fill=blue!6] (orc)  at (0,1.55)     {\textbf{Release controller}\\deadline $D$ from $\Lpub$, $n$, $\pv$;\\first token never before $D$};
+  \node[box,fill=blue!6] (acct) at (5.75,1.55)  {\textbf{Accounting scrubber}\\cached tokens, charges from $\pv$;\\routing headers removed};
+  % physical layer
+  \node[box] (cond)  at (-5.75,-1.25) {\textbf{Slack-aware Conductor}\\admit by $\pv$, place by $\pp$;\\least-slack-first prefill};
+  \node[box] (pools) at (0,-1.25)     {\textbf{Prefill / decode pools}\\compute only blocks not in $\pp$;\\decode unchanged};
+  \node[box] (store) at (5.75,-1.25)  {\textbf{\mc Store}\\global, deduplicated blocks;\\DRAM + SSD via RDMA, soft pins};
+  % layer frames, labels outside the frames
+  \begin{scope}[on background layer]
+    \node[draw=blue!60,thick,rounded corners=4pt,fill=blue!2,inner sep=6pt,
+          fit=(vcd)(orc)(acct),
+          label={[anchor=south west,font=\footnotesize\bfseries,text=blue!60!black,inner sep=2pt]north west:\sys observable layer (new)}] (obsframe) {};
+    \node[draw=black!30,rounded corners=4pt,inner sep=6pt,
+          fit=(cond)(pools)(store),
+          label={[anchor=north west,font=\footnotesize\bfseries,text=black!60,inner sep=2pt]south west:\mc physical layer (unchanged)}] (physframe) {};
+  \end{scope}
+  % arrows
+  \draw[both] (client.south) -- node[lbl,right,pos=0.4]{tokens released at $D$} (orc.north);
+  \draw[arr] (acct.north) |- node[lbl,pos=0.3,right]{usage, charges} (client.east);
+  \draw[both] (vcd.south) -- node[lbl,right]{$\pv$, $D$} (cond.north);
+  \draw[arr] (pools.north) -- node[lbl,right]{tokens} (orc.south);
+  \draw[arr] (cond.east) -- (pools.west);
+  \draw[both] (pools.east) -- (store.west);
+\end{tikzpicture}
+\caption{\sys keeps \mc's physical layer unchanged and derives everything a
+principal can observe from its own virtual cache. $\pv$: virtual (private)
+prefix-hit length; $\pp$: physical (global) hit length; $D$: release deadline;
+$\Lpub$: public load signal.}
+\label{fig:arch}
+\end{figure*}
+
+\sys separates two questions that \mc answers with one number. \emph{How much
+prefill can we skip?} is answered by the physical, global prefix match $\pp$,
+exactly as in \mc. \emph{What may this principal observe?} is answered by a
+virtual match $\pv \le \pp$: the hit length the principal would have seen with a
+private cache of quota $Q$. \Cref{fig:arch} shows the resulting two layers.
+Everything in the observable layer depends only on the principal's own history
+and $\Lpub$; everything in the physical layer is free to share.
+
+\subsection{Virtual Cache Directory}
+\label{sec:vcd}
+The \vcd holds, for each principal $p$, an LRU list of block keys with total
+size at most $Q$ tokens. It stores no tensors. For a request with block chain
+$h_1,\dots,h_m$, $\pv$ is the largest $j$ such that $h_1,\dots,h_j$ are all in
+$p$'s list or in the \emph{declared-public} set (below). After the request, its
+blocks are inserted at the head of $p$'s list, evicting from the tail. At 256
+tokens per block, a 1M-token quota is about 3.9k entries, a few hundred KB per
+active principal \tbd{measured overhead, \cref{sec:eval-overhead}}.
+
+\paragraph{Declared-public prefixes.} Much valuable reuse is of content that is
+not secret: the operator's own system prompts, popular public documents,
+tool schemas. The operator may register such prefixes in a public set that every
+principal's \vcd treats as present. Because membership in the set is fixed by
+declaration rather than by traffic, a hit on it reveals nothing about other
+principals. \todo{Decide: also allow principals to opt into shared groups
+(\eg one organization), which share a single virtual list.}
+
+\subsection{Release controller}
+\label{sec:orc}
+For each admitted request $r$ with $n$ prompt tokens arriving at $t_r$, the
+release controller computes
+\begin{equation}
+  D_r = t_r + \left\lceil \hat{q}(\Lpub) + \hat{T}(n, \pv) \right\rceil_{\beta},
+  \label{eq:deadline}
+\end{equation}
+where $\hat{T}$ is the prefill-time model the Conductor already
+keeps~\cite{qin2025mooncake}, $\hat{q}$ is a queueing allowance fixed per load
+level, and $\lceil\cdot\rceil_\beta$ rounds up to a bucket of width $\beta$.
+The first token is released at $\max(D_r, f_r)$, where $f_r$ is when it is
+actually ready; later tokens keep their measured spacing after it. Every input
+to \cref{eq:deadline} is either the principal's own or public.
+
+\paragraph{Misses.} If $f_r > D_r$, the release time depends on physical state
+and may leak. \sys counts every miss, and, following predictive
+mitigation~\cite{askarov2010predictive,zhang2011predictive}, enlarges the
+principal's bucket for the rest of the epoch after a miss, so that an attacker
+cannot convert misses into a high-rate channel. \Cref{sec:security} bounds the
+resulting leakage; \cref{sec:pinning} keeps misses rare.
+
+\subsection{Admission and accounting}
+\label{sec:admission}
+\mc rejects a request when its predicted TTFT exceeds the SLO, using the global
+match. \sys makes the same decision from $D_r - t_r$, so a request is admitted
+if and only if it would be admitted by an isolated system at the same load
+level. The operator still needs protection from real overload; \sys gets it by
+setting the per-epoch admission budget from measured capacity and publishing
+the result as part of $\Lpub$, rather than by consulting physical cache state
+per request.
+
+The usage record reports $\pv$ as cached tokens and bills the discount on
+$\pv$. The difference $\pp - \pv$ is compute the operator saves but does not
+pass on, which is also what pays for \sys. Response headers that identify
+instances or timing internals are removed.
+
+\subsection{Slack-aware scheduling}
+\label{sec:slack}
+Because $\pp \ge \pv$, a request often needs less GPU time than its deadline
+assumes. Finishing it early gains nothing---its first token waits for
+$D_r$---so \sys instead spends that slack on other requests. The Conductor
+computes each request's latest start time
+$s_r = D_r - \hat{T}(n, \pp) - \hat{x}_r - \epsilon$, where $\hat{x}_r$ is the
+estimated block-transfer time and $\epsilon$ a safety margin, and runs the
+prefill queue least-slack-first (\cref{alg:conductor}). Placement keeps \mc's
+cache affinity, but its objective changes from ``lowest TTFT'' to ``least GPU
+time that still meets $D_r$''. Starting a request just in time, rather than
+early, also avoids holding its KV in decode memory while the first token waits.
+
+\begin{algorithm}[t]
+\caption{\sys Conductor (changes to \mc's Algorithm~1 in \textbf{bold})}
+\label{alg:conductor}
+\small
+\begin{algorithmic}[1]
+\Require request $r$ from principal $p$; prefill pool $P$; load level $\Lpub$
+\State $keys \gets \textsc{PrefixHash}(r.\mathit{tokens}, B)$
+\State $\mathbf{\pv \gets \textsc{VCD.Match}(p, keys)}$ \Comment{own history + public set}
+\State $\mathbf{D_r \gets t_r + \lceil \hat{q}(\Lpub) + \hat{T}(n,\pv)\rceil_\beta}$
+\If{$\mathbf{D_r - t_r > \mathit{SLO}_{TTFT}}$ \textbf{or} \textbf{budget}$(\Lpub)$ \textbf{exhausted}}
+  \State \Return \textsc{Reject} \Comment{same decision an isolated system makes}
+\EndIf
+\For{$i \in P$}
+  \State $\pp_i \gets$ prefix match on $i$ (local or fetchable)
+  \State $w_i \gets \hat{T}(n, \pp_i) + \hat{x}_i$ \Comment{GPU time + transfer}
+  \State $\mathbf{s_i \gets D_r - \hat{q}_i - w_i - \epsilon}$ \Comment{latest start}
+\EndFor
+\State $i^\star \gets \arg\min_{i : s_i \ge \mathit{now}} w_i$ \Comment{\textbf{least work that meets $D_r$}}
+\State enqueue $r$ on $i^\star$ ordered by $s_{i^\star}$ \Comment{\textbf{least slack first}}
+\State \textsc{VCD.Insert}$(p, keys)$; \textsc{ORC.Hold}$(r, D_r)$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{When the virtual cache hits and the physical cache does not}
+\label{sec:pinning}
+The \vcd may say a block is present after global LRU has evicted it. The
+request must then recompute it and may miss $D_r$. \sys soft-pins, through
+\mc Store's per-object pin interface~\cite{mooncakerepo}, the physical blocks
+referenced by recently used \vcd entries of active principals, up to a pin
+budget, and raises the priority of requests whose physical work exceeds their
+virtual estimate. \tbd{Pin budget and miss rate, \cref{sec:eval-defense}.}
+\todo{Check whether a pin budget smaller than the sum of active quotas
+suffices on the traces; if not, quotas must shrink.}
+
+\subsection{What \sys costs}
+Relative to unrestricted sharing, a request whose only hits are on other
+principals' blocks now sees the TTFT of a miss: exactly what per-principal
+isolation would give it. Requests that hit their own history or the public set
+are unaffected. \sys adds no prefill work, by construction.

@@ -1,0 +1,42 @@
+% ---------- draft switches ----------
+\newif\ifdraft
+\drafttrue   % set to \draftfalse to hide placeholder colouring
+
+\ifdraft
+  \newcommand{\tbd}[1]{\textcolor{red}{\textbf{[#1]}}}
+  \newcommand{\todo}[1]{\textcolor{blue}{\textsf{[TODO: #1]}}}
+  \newcommand{\needcite}[1]{\textcolor{orange}{\textsf{[CITE: #1]}}}
+\else
+  \newcommand{\tbd}[1]{#1}
+  \newcommand{\todo}[1]{}
+  \newcommand{\needcite}[1]{}
+\fi
+
+% ---------- names ----------
+\newcommand{\sys}{\textsc{Mirage}\xspace}
+\newcommand{\mc}{Mooncake\xspace}
+\newcommand{\vcd}{VCD\xspace}
+\newcommand{\orc}{ORC\xspace}
+\newcommand{\eg}{e.g.,\xspace}
+\newcommand{\ie}{i.e.,\xspace}
+\newcommand{\etal}{et al.\xspace}
+
+% ---------- math ----------
+\newcommand{\pv}{p^{\mathrm{virt}}}
+\newcommand{\pp}{p^{\mathrm{phys}}}
+\newcommand{\Obs}{\mathcal{O}}
+\newcommand{\Lpub}{\mathcal{L}}
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{conjecture}{Conjecture}
+
+% ---------- figure placeholder: \placeholderfig{height}{what the plot will show} ----------
+\newcommand{\placeholderfig}[2]{%
+  \begin{tikzpicture}
+    \node[draw=red!60,dashed,thick,fill=red!3,minimum width=0.95\columnwidth,
+          minimum height=#1,align=center,text width=0.85\columnwidth,font=\small]
+          {\textcolor{red!70!black}{\textbf{PLACEHOLDER}}\\[2pt]#2};
+  \end{tikzpicture}}
+
+% ---------- attack labels ----------
+\newcommand{\A}[1]{\textbf{A#1}\xspace}

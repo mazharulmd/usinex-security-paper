@@ -1,0 +1,108 @@
+\section{Leakage in Cluster-Scale KVCache}
+\label{sec:attacks}
+
+We first ask what an API tenant can learn from a \mc-style deployment, under
+both unrestricted sharing and per-principal salting. \Cref{tab:attacks}
+summarizes the six attacks. \A1 and \A5 adapt known single-engine
+channels~\cite{song2024earlybird,cve2026105752} to the cluster; \A2, \A3,
+\A4 and \A6 arise from \mc's global pool, tiers, replication and
+admission control.
+
+\begin{table*}[t]
+\centering\small
+\begin{tabular}{@{}l l l l c c c@{}}
+\toprule
+ & Channel & Mechanism & Attacker learns & Timing? & Survives salting? & Result \\
+\midrule
+\A1 & Global hit & Cross-node block fetch beats recompute & Membership & yes & no & \tbd{AUC} \\
+\A2 & Tier ladder & HBM / local DRAM / remote DRAM / SSD latency classes & Recency & yes & no & \tbd{AUC} \\
+\A3 & Replication & Replica count changes fetch contention & Popularity & yes & no & \tbd{AUC} \\
+\A4 & Admission & Hit admitted, miss gets HTTP 429 near the SLO edge & Membership & \textbf{no} & no & \tbd{AUC} \\
+\A5 & Accounting & Usage record reports cached tokens & Exact hit length & \textbf{no} & no$^\dagger$ & \tbd{AUC} \\
+\A6 & Eviction & Victim traffic evicts attacker-primed blocks & Activity volume & yes & \textbf{yes} & \tbd{AUC} \\
+\bottomrule
+\end{tabular}
+\caption{Attacks on a \mc-style deployment. ``Survives salting'' means the
+channel persists when every principal has its own cache key namespace.
+$^\dagger$Unless salting is bypassed, as in~\cite{cve2026105752}.
+Results: \tbd{distinguishability (AUC) at moderate load, \cref{sec:eval-attacks}}.}
+\label{tab:attacks}
+\end{table*}
+
+\subsection{Setup and method}
+\label{sec:attack-method}
+\todo{Finalize after week-1 testbed. Planned: \tbd{2} nodes $\times$ 8 \tbd{GPU
+model}, \tbd{2$\times$200\,Gbps} RoCE, vLLM \tbd{version} with the \mc Store
+connector, a Conductor-style router implementing Algorithm~1
+of~\cite{qin2025mooncake}, models \tbd{Llama-3.1-8B, Qwen 14B, 70B-class}.}
+Background traffic replays the conversation and tool\&agent traces released
+with \mc~\cite{qin2025mooncake} at \tbd{three} load levels. Victims send prompts
+from templated sensitive corpora (system prompts; prompts embedding names and
+medical or financial attributes, following~\cite{chu2025safekv,pennas2026cachesolidarity}).
+For each attack we train a classifier on attacker-only calibration traffic and
+report AUC, attack success rate and queries per recovered token. We also measure
+how load erodes each channel, since contention can make quiet-system
+measurements optimistic~\cite{abubakar2026contention}.
+
+\subsection{Timing channels}
+
+\paragraph{\A1: Global hit.} The attacker sends a candidate prefix. If any
+principal's request placed matching blocks anywhere in the pool, the Conductor
+routes the request to fetch them and TTFT drops by the saved prefill minus the
+RDMA transfer. Unlike single-engine attacks, the victim and attacker need not
+share a node. \tbd{Result: AUC, success rate per token, effect of prefix length.}
+
+\paragraph{\A2: Tier ladder.} A hit is not binary. A block may sit in the
+serving node's HBM or DRAM, in another node's DRAM, or on SSD, each with a
+distinct load time; which tier holds it depends on how recently and where it
+was last used. Probing a known prefix and classifying the latency class reveals
+\emph{when} it was last touched, not only \emph{whether}. \tbd{Result: per-tier
+TTFT distributions (\cref{fig:ladder}), classification accuracy.}
+
+\paragraph{\A3: Replication.} \mc replicates blocks that many requests
+fetch~\cite{qin2025mooncake}. More replicas mean less contention on any one
+holder, so repeated probes of a popular prefix see lower and less variable
+fetch times. The attacker estimates how many principals use a prefix---for
+example, how much traffic a competitor's agent receives. \tbd{Result: correlation
+between estimated and true request rate.}
+
+\begin{figure}[t]
+\centering
+\placeholderfig{1.55in}{TTFT CDFs for a 4k-token prefix: miss vs.\ hit from
+local HBM, local DRAM, remote DRAM, SSD, at low and moderate load.}
+\caption{\A2: the tier ladder. \tbd{Takeaway sentence with numbers.}}
+\label{fig:ladder}
+\end{figure}
+
+\subsection{Non-timing channels}
+
+\paragraph{\A4: Admission.} The Conductor rejects a request when predicted
+TTFT exceeds the SLO, and the prediction uses the global prefix match. The
+attacker raises its prompt length until, at the current load, a miss would be
+rejected and a hit would not; HTTP 429 versus 200 then answers the membership
+question with no clock at all, immune to network jitter. \tbd{Result: success
+rate versus load, number of calibration queries.}
+
+\paragraph{\A5: Accounting.} Usage records that report cached tokens give the
+exact hit length per request. With global sharing this is a perfect membership
+oracle; with salting it leaks whenever the salt is lost along any code
+path~\cite{cve2026105752}. \tbd{Result: confirm on testbed; survey of what
+public APIs report, with disclosure (\cref{app:ethics}).}
+
+\subsection{A contention channel that survives salting}
+
+\paragraph{\A6: Eviction.} Salting separates key spaces but not capacity. The
+attacker primes long, unique prefixes of its own, waits, and re-probes them.
+Global LRU evicts the attacker's blocks only when others insert enough new
+blocks, so the fraction of the attacker's prefixes that survive measures
+other principals' cache insertion volume over the interval, with time
+resolution set by the probe rate. This is a Prime+Probe analogue at the
+storage tier~\cite{yarom2014flush}. \tbd{Result: correlation between surviving
+fraction and victim insertion rate; salted vs.\ unsalted.}
+
+\subsection{Takeaways}
+\todo{Write once results exist. Expected shape: (1) the global pool widens
+membership attacks across nodes; (2) the tiers turn membership into recency and
+popularity; (3) admission and accounting leak with no timing, so timing-only
+defenses such as padding cannot close them; (4) salting removes \A1--\A5 at the
+price of all cross-principal reuse, and still leaves \A6.}

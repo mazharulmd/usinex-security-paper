@@ -1,0 +1,62 @@
+% Mirage -- USENIX Security submission draft (first full skeleton, 2026-10-22)
+% Build:  latexmk -pdf main.tex      (or pdflatex, bibtex, pdflatex, pdflatex)
+% Placeholders render in colour: \tbd{} = a number still to be measured,
+% \todo{} = writing still to do, \needcite{} = a claim that needs a citation.
+% Set \draftfalse below to hide all placeholder colouring when you go camera-ready.
+\documentclass[letterpaper,twocolumn,10pt]{article}
+
+\IfFileExists{usenix-2020-09.sty}
+  {\usepackage{usenix-2020-09}}
+  {\usepackage{usenix-shim}}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[expansion=false]{microtype}
+\usepackage{xspace}
+\usepackage{enumitem}
+\setlist{leftmargin=*,itemsep=1pt,topsep=2pt}
+\usepackage[hidelinks]{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
+
+\input{macros}
+
+\begin{document}
+
+\date{}
+\title{\Large \bf Mirage: Physically Shared, Observably Private KVCache\\
+for Disaggregated LLM Serving}
+
+% Double-blind: USENIX Security requires anonymous submissions.
+\author{{\rm Anonymous Submission}}
+
+\maketitle
+
+\input{sections/00-abstract}
+\input{sections/01-intro}
+\input{sections/02-background}
+\input{sections/03-threat-model}
+\input{sections/04-attacks}
+\input{sections/05-design}
+\input{sections/06-security}
+\input{sections/07-implementation}
+\input{sections/08-evaluation}
+\input{sections/09-discussion}
+\input{sections/10-related}
+\input{sections/11-conclusion}
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\appendix
+\input{sections/A-ethics}
+\input{sections/B-open-science}
+
+\end{document}
