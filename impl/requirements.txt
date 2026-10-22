@@ -1,0 +1,7 @@
+# Harness / analysis dependencies (client side only; the serving stack is pinned in VERSIONS.md).
+aiohttp==3.14.5
+matplotlib==3.11.2
+numpy==2.5.4
+pytest==9.1.1
+pytest-asyncio==1.4.0
+scikit-learn==1.9.1
